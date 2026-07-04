@@ -1,0 +1,22 @@
+# --- PlatformIO Compiled Binaries & Caching ---
+.pio/
+.pioenvs/
+.piolibdeps/
+.clang_complete
+.gcc-flags.json
+.splintrc
+
+# --- VS Code & Local IDE Cache ---
+.vscode/.project
+.vscode/.cproject
+.vscode/.settings/
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/extensions.json
+.vscode/ipch/
+.history/
+*.log
+
+# --- OS Junk Files ---
+.DS_Store
+Thumbs.db
