@@ -77,3 +77,11 @@ These register properties define the signal resolution limits of the data fed in
     *   *Gyroscope Rate Noise:* $0.005^\circ/\text{s}/\sqrt{\text{Hz}}$
     *   *Accelerometer Noise:* $400\ \mu\text{g}/\sqrt{\text{Hz}}$
 *   **Clock Source Options:** Internal $8\text{MHz}$ oscillator, or can be slaved to the gyroscope axis PLL for high-precision timestamp matching across time steps.
+
+## 6. Local Appendix Files
+
+For exact component evaluation curves, absolute safe operating zones, and physical package dimension maps, open the following local PDF datasheets:
+
+*   [View SI2302 N-Channel MOSFET Original Datasheet](./datasheets/SI2302_MOSFET.pdf)
+*   [View MPU6050 MotionTracking IMU Original Datasheet](./datasheets/MPU6050_IMU.pdf)
+*   [View ESP32-S3 Silicon Hardware Datasheet](./datasheets/ESP32S3_Chipset.pdf)
