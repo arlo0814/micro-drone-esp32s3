@@ -38,3 +38,8 @@ $$\theta_{\text{actual}} = \alpha \cdot (\theta_{\text{prev}} + \omega_{\text{gy
 
 ## Chapter 5: References
 * Track your academic literature sources here.
+
+## Appendix A: Project Management Tracking
+The chronological progression, resource scheduling constraints, and complete Work Breakdown Structure (WBS) tracking matrices are decoupled for modular reference. 
+
+*   [Open Standalone Project Management Timeline Reference Worksheet](../references/project_timeline.md)
