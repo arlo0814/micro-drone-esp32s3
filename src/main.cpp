@@ -6,8 +6,13 @@
 
 // --- Global Cross-Core Task Boundary Memory ---
 volatile t_drone_payload pilot_data = {0, 0, 0, 0, 0};
+volatile t_telemetry_payload drone_telemetry = {4.2f, 1.2f, 0.05f, 0.4f, 0, 0}; // Initial default layout states
 volatile float global_battery_voltage = 4.2f;
 unsigned long last_packet_time = 0;
+
+// Mock variables for PID coefficients and orientation tracking (replace with active variables later)
+float PID_Roll_Kp = 1.2f, PID_Roll_Ki = 0.05f, PID_Roll_Kd = 0.4f;
+int16_t angle_pitch = 0, angle_roll = 0;
 
 // --- FreeRTOS Multitasking Handles ---
 TaskHandle_t FlightLoopHandle = NULL;
@@ -15,9 +20,21 @@ TaskHandle_t TelemetryLoopHandle = NULL;
 
 // --- Core 0: Asynchronous Wireless Data Packet Capture Callback ---
 void onDataReceive(const uint8_t * mac_addr, const uint8_t *incomingData, int len) {
+    // 1. Validate and unpack incoming pilot control data frames
     if (len == sizeof(t_drone_payload)) {
         memcpy((void*)&pilot_data, incomingData, sizeof(t_drone_payload));
         last_packet_time = millis(); // Refresh link timestamp window
+        
+        // 2. Load latest calculations into the outgoing telemetry package
+        drone_telemetry.battery_voltage = global_battery_voltage; 
+        drone_telemetry.current_roll_kp = PID_Roll_Kp;
+        drone_telemetry.current_roll_ki = PID_Roll_Ki;
+        drone_telemetry.current_roll_kd = PID_Roll_Kd;
+        drone_telemetry.estimated_pitch = angle_pitch;
+        drone_telemetry.estimated_roll  = angle_roll;
+        
+        // 3. Fire the telemetry structure back to the source transmitter instantly
+        esp_now_send(mac_addr, (uint8_t *) &drone_telemetry, sizeof(drone_telemetry));
     }
 }
 
@@ -27,6 +44,8 @@ void onDataReceive(const uint8_t * mac_addr, const uint8_t *incomingData, int le
 void TelemetryLoopTask(void * pvParameters) {
     // 1. Initialize Wi-Fi and Radio Peripheral Structures
     WiFi.mode(WIFI_MODE_STA);
+    WiFi.disconnect(); // Clean radio profile allocation bounds
+    
     if (esp_now_init() == ESP_OK) {
         esp_now_register_recv_cb(esp_now_recv_cb_t(onDataReceive));
     }
@@ -75,14 +94,12 @@ void FlightLoopTask(void * pvParameters) {
     Wire.endTransmission();
 
     // 2. Map LEDC PWM Hardware Engine Channels (v2.x Core Standard)
-    // Format: ledcSetup(channel, frequency, resolution_bits);
     ledcSetup(0, PWM_FREQ, PWM_RES); 
     ledcSetup(1, PWM_FREQ, PWM_RES);
     ledcSetup(2, PWM_FREQ, PWM_RES);
     ledcSetup(3, PWM_FREQ, PWM_RES);
 
     // Bind physical GPIO pins to their respective allocated hardware channels
-    // Format: ledcAttachPin(gpio_pin, channel);
     ledcAttachPin(MOTOR_FRONT_LEFT,  0);
     ledcAttachPin(MOTOR_FRONT_RIGHT, 1);
     ledcAttachPin(MOTOR_BACK_LEFT,   2);
@@ -97,10 +114,10 @@ void FlightLoopTask(void * pvParameters) {
         // Placeholder for low-level register block reads when parts arrive
 
         // --- STEP B: Run math models (Complementary filter orientation tracking) ---
-        // Placeholder for sensor fusion implementation equations
+        // Placeholder for sensor fusion implementation equations (updates angle_pitch/angle_roll)
 
         // --- STEP C: Closed Loop Processing (Parallel axis PID structures) ---
-        // Placeholder for error computation variables
+        // Placeholder for error computation variables (updates PID constants if tuned on-the-fly)
 
         // --- STEP D: Plant Actuation (Motor Mixing Matrix Output Routing) ---
         if (pilot_data.arm_state == 1 && pilot_data.throttle > 10) {
