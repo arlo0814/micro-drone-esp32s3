@@ -74,11 +74,19 @@ void FlightLoopTask(void * pvParameters) {
     Wire.write(0x00); // Write zero byte value to wake system up from sleep status
     Wire.endTransmission();
 
-    // 2. Map LEDC PWM Hardware Engine Driver Pins
-    ledcAttach(MOTOR_FRONT_LEFT,  PWM_FREQ, PWM_RES);
-    ledcAttach(MOTOR_FRONT_RIGHT, PWM_FREQ, PWM_RES);
-    ledcAttach(MOTOR_BACK_LEFT,   PWM_FREQ, PWM_RES);
-    ledcAttach(MOTOR_BACK_RIGHT,  PWM_FREQ, PWM_RES);
+    // 2. Map LEDC PWM Hardware Engine Channels (v2.x Core Standard)
+    // Format: ledcSetup(channel, frequency, resolution_bits);
+    ledcSetup(0, PWM_FREQ, PWM_RES); 
+    ledcSetup(1, PWM_FREQ, PWM_RES);
+    ledcSetup(2, PWM_FREQ, PWM_RES);
+    ledcSetup(3, PWM_FREQ, PWM_RES);
+
+    // Bind physical GPIO pins to their respective allocated hardware channels
+    // Format: ledcAttachPin(gpio_pin, channel);
+    ledcAttachPin(MOTOR_FRONT_LEFT,  0);
+    ledcAttachPin(MOTOR_FRONT_RIGHT, 1);
+    ledcAttachPin(MOTOR_BACK_LEFT,   2);
+    ledcAttachPin(MOTOR_BACK_RIGHT,  3);
 
     // 3. Setup Strict Periodic Timer Boundaries
     TickType_t xLastWakeTime = xTaskGetTickCount();
@@ -96,23 +104,22 @@ void FlightLoopTask(void * pvParameters) {
 
         // --- STEP D: Plant Actuation (Motor Mixing Matrix Output Routing) ---
         if (pilot_data.arm_state == 1 && pilot_data.throttle > 10) {
-            // Placeholder: Replace zeros with active localized PID loop adjustments
             int16_t m_fl = pilot_data.throttle + 0 - 0 + 0; 
             int16_t m_fr = pilot_data.throttle - 0 - 0 - 0;
             int16_t m_bl = pilot_data.throttle + 0 + 0 - 0;
             int16_t m_br = pilot_data.throttle - 0 + 0 + 0;
 
-            // Enforce safe 8-bit array constraint boundaries (0 to 255 scaling)
-            ledcWrite(MOTOR_FRONT_LEFT,  constrain(m_fl, 0, 255));
-            ledcWrite(MOTOR_FRONT_RIGHT, constrain(m_fr, 0, 255));
-            ledcWrite(MOTOR_BACK_LEFT,   constrain(m_bl, 0, 255));
-            ledcWrite(MOTOR_BACK_RIGHT,  constrain(m_br, 0, 255));
+            // Write constraints targeting CHANNELS (0-3) instead of raw GPIO pins
+            ledcWrite(0, constrain(m_fl, 0, 255)); // Channel 0 (Front Left)
+            ledcWrite(1, constrain(m_fr, 0, 255)); // Channel 1 (Front Right)
+            ledcWrite(2, constrain(m_bl, 0, 255)); // Channel 2 (Back Left)
+            ledcWrite(3, constrain(m_br, 0, 255)); // Channel 3 (Back Right)
         } else {
-            // Safe Mode: Force absolute zero logic state output to gates
-            ledcWrite(MOTOR_FRONT_LEFT,  0);
-            ledcWrite(MOTOR_FRONT_RIGHT, 0);
-            ledcWrite(MOTOR_BACK_LEFT,   0);
-            ledcWrite(MOTOR_BACK_RIGHT,  0);
+            // Safe Mode: Force absolute zero logic state output across channels
+            ledcWrite(0, 0);
+            ledcWrite(1, 0);
+            ledcWrite(2, 0);
+            ledcWrite(3, 0);
         }
 
         // Delay execution block loop until exactly 1ms timestamp window passes
